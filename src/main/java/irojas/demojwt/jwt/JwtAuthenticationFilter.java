@@ -1,5 +1,6 @@
 package irojas.demojwt.jwt;
 
+import irojas.demojwt.token.TokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,18 +24,22 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenRepository tokenRepository;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final String token= getTokenFromRequest(request); //obtenemos token
+        final String jwt= getTokenFromRequest(request); //obtenemos token
         final String username;
-        if(token==null){
+        if(jwt==null){
             filterChain.doFilter(request,response); //si el token es nulo, le devolvemos el control a la cadena de filtros
             return;
         }
-        username=jwtService.getUsernameFromToken(token);
+        username=jwtService.getUsernameFromToken(jwt);
         if(username!=null && SecurityContextHolder.getContext().getAuthentication()==null){ //si el usuario no es nulo y no lo podemos encontrar en el SecurityContextHolder, lo vamos a buscar a la BD
             UserDetails userDetails=userDetailsService.loadUserByUsername(username);
-            if(jwtService.isTokenValid(token,userDetails)) //si es valido, actualizo el SecurityContextHolder
+            boolean isTokenValid=tokenRepository.findByToken(jwt)
+                    .map(t->!t.isExpired() && !t.isRevoked())
+                    .orElse(false);
+            if(jwtService.isTokenValid(jwt,userDetails) && isTokenValid) //si es valido, actualizo el SecurityContextHolder
             {
                 UsernamePasswordAuthenticationToken authToken= new UsernamePasswordAuthenticationToken(
                         userDetails,
