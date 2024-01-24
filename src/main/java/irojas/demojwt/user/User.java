@@ -1,5 +1,6 @@
 package irojas.demojwt.user;
 
+import irojas.demojwt.token.Token;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -40,6 +41,8 @@ public class User implements UserDetails {
     String country;
     @Enumerated(EnumType.STRING)
     Role role;
+    @OneToMany(mappedBy = "user")
+    private List<Token>tokens;
 
 
     @Override
