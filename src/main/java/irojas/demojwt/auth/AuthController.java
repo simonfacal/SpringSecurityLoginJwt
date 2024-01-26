@@ -1,5 +1,8 @@
 package irojas.demojwt.auth;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,9 +13,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Tag(name="Authorization")
 public class AuthController {
 
    private final AuthService authService;
+   @Operation(
+           description = "Post LoginRequest for login ",
+           summary = "This is a summary for authentication post endpoint",
+           responses = {
+                   @ApiResponse(
+                           description = "Success",
+                           responseCode = "200"
+                   ),
+                   @ApiResponse(
+                           description = "Invalid email or password",
+                           responseCode = "403"
+                   )
+           }
+   )
     @PostMapping(value="login")
    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request){
         return ResponseEntity.ok(authService.login(request));

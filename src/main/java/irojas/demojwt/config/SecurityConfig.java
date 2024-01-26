@@ -27,7 +27,17 @@ public class SecurityConfig {
                 .csrf(csrf->csrf.disable()) //deshabitar csrf
                 .authorizeHttpRequests(authRequest->
                         authRequest
-                                .requestMatchers("/auth/**").permitAll() //permite que se pueda acceder sin autorización a todos los endpoints que esten en la ruta /auth
+                                .requestMatchers("/auth/**",
+                                        "/v2/api-docs",
+                                        "/v3/api-docs",
+                                        "/v3/api-docs/**",
+                                        "/swagger-resources",
+                                        "/swagger-resources/**",
+                                        "/configuration/ui",
+                                        "/configuration/security",
+                                        "/swagger-ui/**",
+                                        "/webjars/**",
+                                        "/swagger-ui.html").permitAll() //permite que se pueda acceder sin autorización a todos los endpoints que esten en la ruta /auth
                                 .anyRequest().authenticated()  //cualquier otro endpoint le pedis que se autentique
                  )
                 .sessionManagement(sessionManager-> //desactivamos las sesiones
