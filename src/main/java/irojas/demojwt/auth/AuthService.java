@@ -27,12 +27,14 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(),request.getPassword()));//autenticación del usuario, si no lo encuentra lanza excepción
-        UserDetails user=userRepository.findByUsername(request.getUsername()).orElseThrow(); //buscamos el user
+        User user=userRepository.findByUsername(request.getUsername()).orElseThrow(); //buscamos el user
         String jwtToken=jwtService.getToken(user); //obtenemos el token para el user
-        revokeAllUserTokens((User)user);
-        saveUserToken((User)user,jwtToken);
+        revokeAllUserTokens(user);
+        saveUserToken(user,jwtToken);
+        String refreshToken=jwtService.getRefreshToken(user);
         return AuthResponse.builder()
-                .token(jwtToken)
+                .accessToken(jwtToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -47,9 +49,11 @@ public class AuthService {
                 .build();
         User savedUser=userRepository.save(user);
        String jwtToken=jwtService.getToken(user);
+       String refreshToken=jwtService.getRefreshToken(user);
         saveUserToken(savedUser, jwtToken);
         return AuthResponse.builder()
-                .token(jwtToken)
+                .accessToken(jwtToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 

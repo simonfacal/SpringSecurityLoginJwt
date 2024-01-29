@@ -25,19 +25,28 @@ public class JwtService {
     @Value("${spring.security.refresh-token.expiration}")
     private Long refreshExpiration;
 
-    public String getToken(UserDetails user) {
-        return getToken(new HashMap<>(),user);
+    public String getToken(UserDetails userDetails) {
+        return getToken(new HashMap<>(),userDetails);
     }
 
-    private String getToken(HashMap<String,Object> extraClaims, UserDetails user) {
+    private String getToken(HashMap<String,Object> extraClaims, UserDetails userDetails) {
 
-      return Jwts.builder()
-              .setClaims(extraClaims)
-              .setSubject(user.getUsername())
-              .setIssuedAt(new Date(System.currentTimeMillis()))
-              .setExpiration(new Date(System.currentTimeMillis()+1000*60*24))
-              .signWith(getKey()) //elige el algoritmo de firma más seguro segun el tamaño de bytes de la key
-              .compact();
+      return buildToken(extraClaims,userDetails,jwtExpiration);
+    }
+
+    public String getRefreshToken( UserDetails userDetails) {
+
+        return buildToken(new HashMap<>(),userDetails,refreshExpiration);
+    }
+
+    private String buildToken(HashMap<String,Object> extraClaims, UserDetails userDetails,long expiration){
+        return Jwts.builder()
+                .setClaims(extraClaims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis()+expiration))
+                .signWith(getKey()) //elige el algoritmo de firma más seguro segun el tamaño de bytes de la key
+                .compact();
     }
 
     private Key getKey(){
