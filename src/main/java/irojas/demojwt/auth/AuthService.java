@@ -1,5 +1,6 @@
 package irojas.demojwt.auth;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import irojas.demojwt.jwt.JwtService;
 import irojas.demojwt.token.Token;
 import irojas.demojwt.token.TokenRepository;
@@ -7,13 +8,20 @@ import irojas.demojwt.token.TokenType;
 import irojas.demojwt.user.Role;
 import irojas.demojwt.user.User;
 import irojas.demojwt.user.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -82,4 +90,30 @@ public class AuthService {
     }
 
 
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        final String authHeader=request.getHeader(HttpHeaders.AUTHORIZATION);
+        final String refreshToken;
+        final String username;
+        if(authHeader==null || !authHeader.startsWith("Bearer ")){
+           return;
+        }
+        refreshToken= authHeader.substring(7);
+        username=jwtService.getUsernameFromToken(refreshToken);
+        if(username!=null){ //si el usuario no es nulo y no lo podemos encontrar en el SecurityContextHolder, lo vamos a buscar a la BD
+            User user=this.userRepository.findByUsername(username).orElseThrow();
+
+            if(jwtService.isTokenValid(refreshToken,user)) //si es valido, actualizo el SecurityContextHolder
+            {
+               String accessToken=jwtService.getToken(user);
+                revokeAllUserTokens(user);
+                saveUserToken(user,accessToken);
+               AuthResponse authResponse=AuthResponse.builder()
+                       .accessToken(accessToken)
+                       .refreshToken(refreshToken)
+                       .build();
+               //aca podriamos hacer un return de AuthorizationResponse como en el register y login
+                new ObjectMapper().writeValue(response.getOutputStream(),authResponse);
+            }
+        }
+    }
 }
