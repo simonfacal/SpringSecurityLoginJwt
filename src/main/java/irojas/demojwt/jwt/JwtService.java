@@ -3,9 +3,9 @@ package irojas.demojwt.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.JwtParserBuilder;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +17,14 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
+    @Value("${spring.security.jwt.secret-key}")
+    private String secretKey; //la key que queramos que sea de 256 bits
+    @Value("${spring.security.jwt.expiration}")
+    private Long jwtExpiration;
 
-    private static final String SECRET_KEY="b21c56f9b9c3959138c7d5a9db15e8acbc16d7348699a6515edda928c0e1d87f"; //la key que queramos que sea de 256 bits
+    @Value("${spring.security.refresh-token.expiration}")
+    private Long refreshExpiration;
+
     public String getToken(UserDetails user) {
         return getToken(new HashMap<>(),user);
     }
@@ -35,7 +41,7 @@ public class JwtService {
     }
 
     private Key getKey(){
-        byte[]keyBytes= Decoders.BASE64.decode(SECRET_KEY);
+        byte[]keyBytes= Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
